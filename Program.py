@@ -95,7 +95,7 @@ class BinaryParseTree:
         expr=re.sub('\)',']',expr)
         expr=re.sub( '([-/^+*]|[0-9]|[a-z])', r'"\1"' ,expr)
         expr=re.sub(" ",',',expr)
-        arr=eval(expr) #Returns the array
+        arr=eval(expr) #Returns the array corresponding to expression
         return arr
     
     def convertListToExpr(self,arr):
@@ -106,7 +106,7 @@ class BinaryParseTree:
         expr=re.sub( '"', '' ,expr)
         expr=re.sub( "'", '' ,expr)
         expr=re.sub(",",'',expr)
-        return expr
+        return expr #Returns expression as defined by list
     
     def fromPrefix(self, expr=''): 
         #Expr example: '(/ (- a b) 3)' 
