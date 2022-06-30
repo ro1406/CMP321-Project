@@ -341,8 +341,8 @@ def test3(*args):
         tree.prettyPrint()
         toInfixResult=tree.toInfix()
         print(toInfixResult)
-        print("Infix list representation:")
-        print(tree.convertExprToList(toInfixResult))
+        print("Prefix list representation:")
+        print(tree.convertExprToList(tree.toPrefix())) #List rep is in prefix format
         print()
         assert toInfixResult==expr
 
