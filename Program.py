@@ -4,10 +4,18 @@ Created on Fri Jun 24 18:35:31 2022
 
 @author: rohan
 """
+
+#Custom exception
+
+class IncorrectFormat(Exception):
+    def __init__(self):
+        super().__init__('[Error] Incorrect format supplied!')
+
 class BinaryParseTree:
     class Node:
         def __init__(self, data, left=None, right=None):
             self.data, self.left, self.right = data, left, right
+            
         def __str__(self): return self.data
 
     def __init__(self, root=None): self.root = root
@@ -110,12 +118,14 @@ class BinaryParseTree:
     
     def fromPrefix(self, expr=''): 
         #Expr example: '(/ (- a b) 3)' 
-        #Raise exception for invalid expression TBD
-        operators='/+*-^'
-        if expr[1] not in operators: #First thing inside () should be an operator
-            raise Exception
-        #Convert to an array rep:
+        
+        #Convert expression to list rep
         arr=self.convertExprToList(expr)
+        
+        operators='/+*-^'
+        if arr[0] not in operators: #First thing inside () should be an operator
+            raise IncorrectFormat
+    
         #Call fromList function with the list representation:
         self.fromList(arr)
         return self
@@ -123,7 +133,11 @@ class BinaryParseTree:
     
     def fromInfix(self, expr=''):
         
-        #Raise exception for invalid expression TBD
+        operators='/+*-^'
+        arr=self.convertExprToList(expr)
+        if arr[1] not in operators: #First thing inside () should be an operator
+            raise IncorrectFormat
+        
         def makeTree(currNode,listrep):
             if isinstance(listrep,str):
                 return self.Node(listrep)
@@ -137,11 +151,17 @@ class BinaryParseTree:
             
             return currNode
         
-        self.root=makeTree(self.root,self.convertExprToList(expr))
-            
+        self.root=makeTree(self.root,arr)
+        return self
     
     def fromPostfix(self, expr=''):
-        #Raise exception for invalid expression TBD
+        
+        operators='/+*-^'
+        arr=self.convertExprToList(expr)
+
+        if arr[2] not in operators: #First thing inside () should be an operator
+            raise IncorrectFormat
+            
         def makeTree(currNode,listrep):
             if isinstance(listrep,str):
                 return self.Node(listrep)
@@ -155,7 +175,8 @@ class BinaryParseTree:
             
             return currNode
         
-        self.root=makeTree(self.root,self.convertExprToList(expr))
+        self.root=makeTree(self.root,arr)
+        return self
     
     def toPrefix(self):
         res=self.toList()
@@ -193,9 +214,11 @@ class BinaryParseTree:
         return self.convertListToExpr(res)
         
         
+    def __iter__(self):# For list(tree)
+        import re
+        return iter(re.sub(r'[() ]','',self.toPrefix())) # Remove all the spaces and parenthesis from the string
         
-    #def ??? # for list(tree)
-    
+        
     def nodesByLevel(self):
         if self.root == None: return []
         node = self.root
@@ -215,19 +238,58 @@ class BinaryParseTree:
         return __h(self.root)
 
 
-class XBinaryParseTree(BinaryParseTree): # to be implemented
-    pass # (part III)
-    #Rearrange the expression into infix notation and then call self.fromInfix :)
+class XBinaryParseTree(BinaryParseTree):
+    def __init__(self, root=None):
+        super().__init__(root)
+    
+    def convertExprToList(self,expr):
+        import re
+        expr=re.sub('\(','[',expr)
+        expr=re.sub('\)',']',expr)
+        expr=re.sub( '([-/^+*><?:]|[0-9]|[a-z])', r'"\1"' ,expr) #Added operators
+        expr=re.sub(" ",',',expr)
+        arr=eval(expr) #Returns the array corresponding to expression
+        return arr 
+    
+    def fromInfix(self, expr=''):
+        
+        operators='/+*-^?:<>'
+        arr=self.convertExprToList(expr)
+        if arr[1] not in operators: #First thing inside () should be an operator
+            raise IncorrectFormat
+        
+        def makeTree(currNode,listrep):
+            if isinstance(listrep,str):
+                return self.Node(listrep)
+            
+            if not currNode:
+                currNode=self.Node(listrep[1])
+            else:
+                currNode.data=listrep[1]
+            currNode.left=makeTree(currNode.left,listrep[0])
+            currNode.right=makeTree(currNode.right,listrep[2])
+            
+            return currNode
+        
+        self.root=makeTree(self.root,arr)
+        return self
+    
 
+
+#####################################################################################
 
 def test1(*args):
     for listrep in args:
+        print("Input:",listrep)
         tree=BinaryParseTree()
         tree.fromList(listrep)
         tree.prettyPrint() 
         assert tree.toList() == listrep
         
 #Test Q1:
+print('='*90)
+print(' '*40,"Part 1")
+print('='*90)
 
 test1(['+', 'a', '1'],
         ['/', ['+', 'x', 'y'], '2'],
@@ -236,32 +298,56 @@ test1(['+', 'a', '1'],
         ['-',['*','2',['*',['^','x','3'],['^','y','3']]],['-',['^','x','2'],['^','y','2']]] )
 
 
+#Test Q2:
+
+print('='*90)
+print(' '*40,"Part 2")
+print('='*90)    
+
+def test2(*args):
+    for listrep in args:
+        tree=BinaryParseTree()
+        print(listrep,':')
+        print('    Infix:',tree.fromPrefix(listrep).toInfix())
+        print('    Prefix:',tree.fromPrefix(listrep).toPrefix())
+        print('    Postfix:',tree.fromPrefix(listrep).toPostfix())
+        print()
+        assert tree.fromPrefix(listrep).toPrefix() == listrep
+   
+  
+test2('(+ a 1)',
+        '(/ (+ x y) 2)',
+        '(* a (+ b (^ c d)))',
+        '(+ (* (+ a b) (- a b)) (^ (+ a b) 2))',
+        '(- (* 2 (* (^ x 3) (^ y 3))) (- (^ x 2) (^ y 2)))' )
+
+#Trying list(tree)
+print("-"*90)
+print("List(t) where t=BinaryParseTree().fromPostfix('(n 4 ^)') yields: ")
+print(list(BinaryParseTree().fromPostfix('(n 4 ^)')))
+print("-"*90)
 
 
-print("Trying from prefix:")
-tree=BinaryParseTree()
-tree.fromPrefix('(* a (+ b (^ c d)))')
-tree.prettyPrint()
-print("Prefix expression:")
-print("True val:",'(* a (+ b (^ c d)))')
-print("Result:",tree.toPrefix())
+#Test Q3:
 
-print("Trying from infix:")
-tree=BinaryParseTree()
-tree.fromInfix('(a * (b + (c ^ d)))')
-tree.prettyPrint()
-print("Infix expression:")
-print("True val:",'(a * (b + (c ^ d)))')
-print("Result:",tree.toInfix())
+print('='*90)
+print(' '*40,"Part 3")
+print('='*90)    
+
+def test3(*args):
+    for expr in args:
+        tree=XBinaryParseTree()
+        tree.fromInfix(expr)
+        tree.prettyPrint()
+        toInfixResult=tree.toInfix()
+        print(toInfixResult)
+        print("Infix list representation:")
+        print(tree.convertExprToList(toInfixResult))
+        print()
+        assert toInfixResult==expr
+
+test3('((a > b) ? (a : b))',
+      '((x > (2 * y)) ? ((x + y) : (x - y)))', #Unary op for last part?
+      '((a > b) ? (((a - b) ^ 2) : ((a + b) ^ 2)))')
 
 
-print("Trying from postfix:")
-tree=BinaryParseTree()
-tree.fromPostfix('(a (b (c d ^) +) *)')
-tree.prettyPrint()
-print("Postfix expression:")
-print("True val:",'(a (b (c d ^) +) *)')
-print("Result:",tree.toPostfix())
-
-        
- 
