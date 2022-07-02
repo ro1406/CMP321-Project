@@ -1,0 +1,6 @@
+Our github link to the project code:https://github.com/ro1406/CMP321-Project
+All team members contributed equally to the project.
+
+Rohan and Keshav implemented the to/from pre/post/in-fix functions. All these functions were done by the same team members, since they're similar, and only require a small change.
+
+Mamoon and Omar extended the class, wrote the pretty print function, and test functions and cases. In addition, changes to the nodesByLevel function was also implemented to support the pretty print function.
